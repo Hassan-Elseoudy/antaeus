@@ -51,7 +51,6 @@ public class BillingService(private val paymentProvider: PaymentProvider,
 
 
     private suspend fun charge() = coroutineScope {
-        print("This is a quartz job!");
         invoiceService.fetchPendingInvoices()
                 .map { invoice ->
                     async(coroutineExceptionHandler) {

@@ -22,7 +22,6 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.quartz.CronScheduleBuilder
-import org.quartz.CronScheduleBuilder.cronSchedule
 import org.quartz.JobBuilder
 import org.quartz.Trigger
 import org.quartz.TriggerBuilder
@@ -78,9 +77,8 @@ fun main() {
     val trigger: Trigger = TriggerBuilder.newTrigger()
             .withIdentity("billingTrigger", "group1")
             .startNow()
-            .withSchedule(cronSchedule("0/20 * * * * ?"))
-//            .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(17, 15) // Starts day 1, hour 0, minute 0
-//                    .withMisfireHandlingInstructionFireAndProceed()) // Misfiring
+            .withSchedule(CronScheduleBuilder.monthlyOnDayAndHourAndMinute(1, 0, 0) // Starts day 1, hour 0, minute 0
+                    .withMisfireHandlingInstructionFireAndProceed()) // Misfiring
             .build()
 
     scheduler.context["billingService"] = billingService

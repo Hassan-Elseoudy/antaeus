@@ -21,6 +21,12 @@ import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.quartz.CronScheduleBuilder
+import org.quartz.CronScheduleBuilder.cronSchedule
+import org.quartz.JobBuilder
+import org.quartz.Trigger
+import org.quartz.TriggerBuilder
+import org.quartz.impl.StdSchedulerFactory
 import setupInitialData
 import java.io.File
 import java.sql.Connection
@@ -61,7 +67,25 @@ fun main() {
     val customerService = CustomerService(dal = dal)
 
     // This is _your_ billing service to be included where you see fit
-    val billingService = BillingService(paymentProvider = paymentProvider)
+    val billingService = BillingService(paymentProvider = paymentProvider, invoiceService= invoiceService, dal = dal)
+    val schedulerFactory = StdSchedulerFactory();
+    val scheduler = schedulerFactory.scheduler;
+
+    val job = JobBuilder.newJob(BillingService::class.java)
+            .withIdentity("billingService", "group1")
+            .build()
+
+    val trigger: Trigger = TriggerBuilder.newTrigger()
+            .withIdentity("billingTrigger", "group1")
+            .startNow()
+            .withSchedule(cronSchedule("0/20 * * * * ?"))
+//            .withSchedule(CronScheduleBuilder.dailyAtHourAndMinute(17, 15) // Starts day 1, hour 0, minute 0
+//                    .withMisfireHandlingInstructionFireAndProceed()) // Misfiring
+            .build()
+
+    scheduler.context["billingService"] = billingService
+    scheduler.scheduleJob(job, trigger)
+    scheduler.start()
 
     // Create REST web service
     AntaeusRest(
